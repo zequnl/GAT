@@ -14,7 +14,7 @@ def attn_head(seq, out_sz, bias_mat, activation, in_drop=0.0, coef_drop=0.0, res
         f_1 = tf.layers.conv1d(seq_fts, 1, 1)
         f_2 = tf.layers.conv1d(seq_fts, 1, 1)
         logits = f_1 + tf.transpose(f_2, [0, 2, 1])
-        coefs = tf.nn.softmax(tf.nn.leaky_relu(logits) + bias_mat)
+        coefs = tf.nn.softmax(tf.maximum(0.2 * logits, logits) + bias_mat)
 
         if coef_drop != 0.0:
             coefs = tf.nn.dropout(coefs, 1.0 - coef_drop)
@@ -47,7 +47,7 @@ def sp_attn_head(seq, out_sz, adj_mat, activation, nb_nodes, in_drop=0.0, coef_d
         f_2 = tf.layers.conv1d(seq_fts, 1, 1)
         logits = tf.sparse_add(adj_mat * f_1, adj_mat * tf.transpose(f_2, [0, 2, 1]))
         lrelu = tf.SparseTensor(indices=logits.indices, 
-                values=tf.nn.leaky_relu(logits.values), 
+                values=tf.maximum(0.2 * logits.values, logits.values), 
                 dense_shape=logits.dense_shape)
         coefs = tf.sparse_softmax(lrelu)
 
